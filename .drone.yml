@@ -1,0 +1,37 @@
+kind: pipeline
+name: drone-kaniko
+
+clone:
+  disable: true
+
+steps:
+  - name: proxy-clone
+    image: registry-vpc.cn-hangzhou.aliyuncs.com/iftech/drone-git
+  - name: go_build
+    image: registry-vpc.cn-hangzhou.aliyuncs.com/iftech/golang:1.13-alpine
+    commands:
+      -  GOPROXY="https://goproxy.cn" go build
+  - name: push
+    image: registry-vpc.cn-hangzhou.aliyuncs.com/iftech/drone-kaniko:dev
+    settings:
+      registry: registry-vpc.cn-hangzhou.aliyuncs.com
+      repo: iftech/${DRONE_REPO_NAME}
+      tags: ${DRONE_SOURCE_BRANCH//\//-}-${DRONE_COMMIT:0:7}
+      cache: true
+      cache_repo: ${DRONE_REPO_NAME}-cache
+      access_key:
+        from_secret: access_key
+      secret_access_key:
+        from_secret: secret_access_key
+---
+kind: secret
+name: access_key
+get:
+  path: drone-aliyun-cr
+  name: access_key
+---
+kind: secret
+name: secret_access_key
+get:
+  path: drone-aliyun-cr
+  name: secret_access_key
